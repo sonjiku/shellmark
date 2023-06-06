@@ -2,7 +2,7 @@
 
 ## Install
 
-1. git clone git://github.com/huyng/shellmarks.git
+1. git clone git://github.com/sonjiku/shellmark.git
 2. cd shellmarks
 3. make install
 4. run
