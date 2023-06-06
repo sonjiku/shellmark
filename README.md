@@ -1,30 +1,32 @@
-### Bashmarks is a shell script that allows you to save and jump to commonly used directories. Now supports tab completion.
+### shellmarks is a shell script that allows you to save and jump to commonly used directories. Now supports tab completion.
 
 ## Install
 
-1. git clone git://github.com/huyng/bashmarks.git
-2. cd bashmarks
+1. git clone git://github.com/huyng/shellmarks.git
+2. cd shellmarks
 3. make install
-4. source **~/.local/bin/bashmarks.sh** from within your **~.bash\_profile** or **~/.bashrc** file
+4. run
 
 ## Shell Commands
 
-    s <bookmark_name> - Saves the current directory as "bookmark_name"
-    g <bookmark_name> - Goes (cd) to the directory associated with "bookmark_name"
-    p <bookmark_name> - Prints the directory associated with "bookmark_name"
-    d <bookmark_name> - Deletes the bookmark
-    l                 - Lists all available bookmarks
+    shellmark -s SHELLMARK [DIRECTORY] - Saves DIRECTORY or $PWD as SHELLMARK
+    shellmark -g SHELLMARK             - Goes (cd) to the directory associated with "bookmark_name"
+    shellmark -p SHELLMARKs            - Prints the directories associated with the provided shellmarks
+    shellmark -d SHELLMARKs            - Deletes the shellmarks
+    shellmark -l                       - Lists all available bookmarks
+    shellmark -L                       - Lists all available shellmarks and their associated directories
     
 ## Example Usage
 
     $ cd /var/www/
-    $ s webfolder
+    $ shellmark -s webfolder
     $ cd /usr/local/lib/
-    $ s locallib
-    $ l
-    $ g web<tab>
-    $ g webfolder
+    $ shellmark -s locallib
+    $ shellmark -l
+    $ shellmark -p webfolder
+    $ shellmark -g web
+    $ shellmark -d webfolder web
 
-## Where Bashmarks are stored
+## Where shellmarks are stored
     
-All of your directory bookmarks are saved in a file called ".sdirs" in your HOME directory.
+All of your directory bookmarks are saved in "~/.config/shell/shmal" (think SHell MArk List), but that can easily be changed just by changing the SMFILE environment variable.

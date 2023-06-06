@@ -1,0 +1,298 @@
+#!/bin/env sh
+
+# Copyright (c) 2010, Huy Nguyen, http://www.huyng.com
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided 
+# that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice, this list of conditions 
+#       and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+#       following disclaimer in the documentation and/or other materials provided with the distribution.
+#     * Neither the name of Huy Nguyen nor the names of contributors
+#       may be used to endorse or promote products derived from this software without 
+#       specific prior written permission.
+#       
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED 
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR 
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# POSSIBILITY OF SUCH DAMAGE.
+
+
+# USAGE: 
+# shellmarks -s bookmarkname - saves the curr dir as bookmarkname
+# shellmarks -g bookmarkname - jumps to the that bookmark
+# shellmarks -g b[TAB] - tab completion is available
+# shellmarks -p bookmarkname - prints the bookmark
+# shellmarks -p b[TAB] - tab completion is available
+# shellmarks -d bookmarkname - deletes the bookmark
+# shellmarks -d [TAB] - tab completion is available
+# shellmarks -l - list all bookmarks
+
+# setup file to store bookmarks
+_sm_file_name="shmal"
+if [ -z "$SMFILE" ]; then
+    if [ -z "$XDG_CONFIG_HOME" ]; then
+        if [ -d "$XDG_CONFIG_HOME/shell" ]; then
+            mkdir -p "$XDG_CONFIG_HOME/shell"
+        fi
+        SMFILE="$XDG_CONFIG_HOME/shell/$_sm_file_name"
+    else
+        if [ -d "$HOME/.config/shell" ]; then
+            mkdir -p "$HOME/.config/shell"
+        fi
+        SMFILE="$HOME/.config/shell/$_sm_file_name"
+    fi
+fi
+if [ ! -f "$SMFILE" ]; then
+    touch "$SMFILE"
+fi
+
+# RED="0;31m"
+# GREEN="0;33m"
+
+# Error message and exit
+_sm_error () {
+    case "$1" in
+        1) echo "Error: Wrong usage of arguments!" ;;
+        2) echo "Error: Shellmark name required!" ;;
+        3) echo "Error: Bookmark name is not valid!" ;;
+        4) echo "Error: Provided with 2 directories but no shellmark name!" ;;
+        5) echo "Error: No valid directory provided!" ;;
+        6) echo "Error: Shouldn't have reached this point." ;;
+        7) echo "Error: Shellmark already exists." ;;
+        8) echo "Error: Directory does not exist!" ;;
+        9) echo "Error: Shellmark does not exist!" ;;
+        *) ;;
+    esac
+    if [ "$#" = 1 ]; then
+        kill -SIGINT $$
+    fi
+}
+
+# print out help for the forgetful
+_print_help () {
+    echo ''
+    echo 'Usage: shellmarks [OPTIONS] [SHELLMARK...] [DIRECTORY]'
+    echo ''
+    echo '  -d, --delete  Deletes SHELLMARKs from list'
+    echo '  -g, --go      Goes (cd) to the directory pointed to by SHELLMARK'
+    echo '  -p, --print   Prints the directories pointed to by SHELLMARKs'
+    echo '  -s, --set     Saves DIRECTORY or else $PWD as SHELLMARK'
+    echo '  -h, --help    Lists all available shellmarks'
+    echo '  -l, --list    Lists all available shellmarks'
+    echo '  -L, --listdir Lists all available shellmarks and the directories they point to'
+    echo ''
+}
+
+_check_sm () {
+    # Check if shellmark name is valid. If not, exit with error
+    _sm="$1"
+    if echo "$_sm" | grep -qEe "[^a-zA-Z0-9_]"; then
+        _sm_error 3
+    fi
+    # Check if SM already exists in SMFILE.
+    if grep -qEe "^$_sm " "$SMFILE"; then
+        _sm_e=1
+    else
+        _sm_e=0
+    fi
+}
+
+# save current directory to bookmarks
+_set_sm () {
+    _sm="///"
+    _sm_dir="///"
+    _sm_erff=0
+    if [ "$#" -eq 3 ]; then
+        if [ -d "$2" ]; then
+            _sm_dir="$2"
+        else
+            _sm="$2"
+        fi
+        if [ -d "$3" ]; then
+            _sm_dir="$3"
+        else
+            _sm="$3"
+        fi
+        if [ "$_sm" = "///" ]; then
+            _sm_error 4 0
+            _sm_erff=1
+        fi
+        if [ "$_sm_dir" = "///" ]; then
+            _sm_error 5 0
+            _sm_erff=1
+        fi
+        if [ "$_sm_erff" = 1 ]; then
+            _sm_error -1 
+        fi
+    elif [ "$#" -eq 2 ]; then
+        _sm="$2"
+        _sm_dir=$(pwd)
+    else
+        _sm_error 6
+    fi
+
+    _sm_dir=$(echo "$_sm_dir"| sed -Ee 's:(/home/[^/]+):~:')
+    _check_sm "$_sm"
+    if [ "$_sm_e" = 1 ]; then
+        _sm_error 7
+    else
+        echo "$_sm $_sm_dir" >> "$SMFILE"
+    fi
+}
+
+# jump to bookmark
+_go_sm () {
+    _check_sm "$1"
+    if [ "$_sm_e" = 1 ] ; then
+        # Get dir by dereferrencing sm in SMFILE
+        _sm_dir=$(grep "^$1 " "$SMFILE" | awk '{print $2}' | sed -e "s:~:$HOME:")
+
+        # Check if dir exists
+        if [ -d "$_sm_dir" ]; then
+            cd "$_sm_dir" || exit
+        else
+            _sm_error 8
+            kill -SIGINT $$
+        fi
+
+    else
+        _sm_error 9
+    fi
+}
+
+# print bookmark
+_print_sm () {
+    inc=0
+    for _sm_ar in "$@"; do
+        inc=$((inc+1))
+        if [ "$inc" -gt 1 ]; then
+            _check_sm "$_sm_ar"
+            if [ "$_sm_e" = 1 ] ; then
+                _sm_dir=$(grep "^$_sm_ar " "$SMFILE" | awk '{print $2}' | sed -e "s:~:$HOME:")
+                echo "$_sm_dir"
+            else
+                if [ "$#" -eq 1 ]; then
+                    _sm_error 9
+                else
+                    _sm_error 9 0
+                fi
+            fi
+        fi
+    done
+}
+
+# delete bookmark
+_delete_sm () {
+    inc=0
+    for _sm_ar in "$@"; do
+        inc=$((inc+1))
+        if [ "$inc" -gt 1 ]; then
+            _check_sm "$_sm_ar"
+            if [ "$_sm_e" = 1 ] ; then
+                sed -iEe "/^$_sm_ar /d" "$SMFILE"
+            else
+                if [ "$#" -eq 1 ]; then
+                    _sm_error 9
+                else
+                    _sm_error 9 0
+                fi
+            fi
+        fi
+    done
+}
+
+
+# list bookmarks with dirnam
+_list_sm_dir () {
+    cat "$SMFILE"
+}
+# list bookmarks without dirname
+_list_sm () {
+    awk '{print $1}' < "$SMFILE"
+}
+
+# completion command
+# _comp () {
+#     local curw
+#     COMPREPLY=()
+#     curw=${COMP_WORDS[COMP_CWORD]}
+#     COMPREPLY=($(compgen -W '`_l`' -- $curw))
+#     return 0
+# }
+#
+# # ZSH completion command
+# _compzsh () {
+#     reply=($(_l))
+# }
+
+# safe delete line from smdirs
+
+# # bind completion command for g,p,d to _comp
+# if [ $ZSH_VERSION ]; then
+#     compctl -K _compzsh g
+#     compctl -K _compzsh p
+#     compctl -K _compzsh d
+# elif [ $BASH_VERSION ]; then
+#     shopt -s progcomp
+#     complete -F _comp g
+#     complete -F _comp p
+#     complete -F _comp d
+# fi
+
+# grep -qEe "(^-[dgpshl]$|^--(delete|go|print|set|help|list)$)"
+if [ "$#" -gt 0 ]; then
+    if echo "$1" | grep -qEe "(^-d$|^--delete$)"; then
+        if [ "$#" -gt 1 ]; then
+            _delete_sm "$@"
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-g$|^--go$)"; then
+        if [ "$#" = 2 ]; then
+            _go_sm "$2"
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-h$|^--help$)"; then
+        if [ "$#" = 1 ]; then
+            _print_help
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-l$|^--list$)"; then
+        if [ "$#" = 1 ]; then
+            _list_sm
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-L$|^--listdir$)"; then
+        if [ "$#" = 1 ]; then
+            _list_sm_dir
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-p$|^--print$)"; then
+        if [ "$#" -gt 1 ]; then
+            _print_sm "$@"
+        else
+            _sm_error 1
+        fi
+    elif echo "$1" | grep -qEe "(^-s$|^--set$)"; then
+        if [ "$#" -gt 1 ] && [ "$#" -lt 4 ]; then
+            _set_sm "$@"
+        else
+            _sm_error 1
+        fi
+    else
+        _sm_error 1
+    fi
+else
+    _print_help
+fi
