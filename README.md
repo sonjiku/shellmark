@@ -1,4 +1,4 @@
-### shellmarks is a shell script that allows you to save and jump to commonly used directories. Now supports tab completion.
+### shellmark is a POSIX shell script that allows you to save and jump to commonly used directories. ~~Now supports tab completion~~.
 
 ## Install
 
