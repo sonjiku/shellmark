@@ -220,34 +220,6 @@ _list_sm () {
     sort "$SMFILE"|awk '{print $1}'
 }
 
-# completion command
-# _comp () {
-#     local curw
-#     COMPREPLY=()
-#     curw=${COMP_WORDS[COMP_CWORD]}
-#     COMPREPLY=($(compgen -W '`_l`' -- $curw))
-#     return 0
-# }
-#
-# # ZSH completion command
-# _compzsh () {
-#     reply=($(_l))
-# }
-
-# safe delete line from smdirs
-
-# # bind completion command for g,p,d to _comp
-# if [ $ZSH_VERSION ]; then
-#     compctl -K _compzsh g
-#     compctl -K _compzsh p
-#     compctl -K _compzsh d
-# elif [ $BASH_VERSION ]; then
-#     shopt -s progcomp
-#     complete -F _comp g
-#     complete -F _comp p
-#     complete -F _comp d
-# fi
-
 # grep -qEe "(^-[dgpshl]$|^--(delete|go|print|set|help|list)$)"
 if [ "$#" -gt 0 ]; then
     if echo "$1" | grep -qEe "(^-d$|^--delete$)"; then

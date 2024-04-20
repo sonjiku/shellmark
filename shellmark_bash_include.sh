@@ -1,4 +1,4 @@
-_shellmark()
+_shellmark_bash_completion()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local prev=${COMP_WORDS[COMP_CWORD-1]}
@@ -33,4 +33,10 @@ cdm(){
       shellmark $@
    fi
 }
-complete -F _shellmark cdm
+
+if [ $BASH_VERSION ]; then
+   complete -F _shellmark_bash_completion cdm
+elif [ $ZSH_VERSION ]; then
+   autoload -U +X bashcompinit && bashcompinit
+   complete -F _shellmark_bash_completion cdm
+fi
