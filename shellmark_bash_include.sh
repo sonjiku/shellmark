@@ -27,7 +27,7 @@ _shellmark()
 cdm(){
    if ( [ "$1" = "-g" ] || [ "$1" = "--go" ] ) && [ -n "$2" ];then
       cd "$(shellmark -p $2)"
-   elif ! [[ $1 == -* ]];then
+   elif ( [ -n "$1" ] && ! [[ $1 == -* ]] );then
       cd "$(shellmark -p $1)"
    else
       shellmark $@
