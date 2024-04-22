@@ -217,7 +217,7 @@ _delete_sm () {
 
 # list bookmarks with dirnam
 _list_sm_dir () {
-    cat "$SMFILE"|sort
+    cat "$SMFILE" | column -t -d -l 2 -C width=2| sort
 }
 # list bookmarks without dirname
 _list_sm () {
