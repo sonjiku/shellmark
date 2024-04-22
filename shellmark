@@ -90,6 +90,10 @@ _print_help () {
     echo '  -L, --listdir Lists all available shellmarks and the directories they point to'
     echo ''
     echo 'Config: ~/.config/shell/shmal'
+    echo
+    echo "Configured aliases:"
+    echo
+    _list_sm_dir
 }
 
 _check_sm () {
