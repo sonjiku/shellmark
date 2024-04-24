@@ -4,7 +4,7 @@ _shellmark_bash_completion()
     local prev=${COMP_WORDS[COMP_CWORD-1]}
     local next=""
 
-    local all_options="-d --delete -g --go -p --print -s --set -h --help -l --list -L --listdiri -r --replace"
+    local all_options="-d --delete -g --go -p --print -s --set -h --help -l --list -L --listdir -r --replace"
     local all_marks="$(shellmark -l|xargs)"
 
     case $prev in
@@ -15,7 +15,7 @@ _shellmark_bash_completion()
          next=""
       ;;
       *)
-         next="$all_options $all_marks"
+         next="$all_marks $all_options"
       ;;
     esac
 
